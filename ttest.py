@@ -1,7 +1,27 @@
 import numpy as np
 import scipy.stats as ss
 
-#test along axis 0
+# perform student's t-test on nd arrays X1 and X2 along axis 0.
+# returns p-value. (2-sided) probability of samples X1 and X2 coming from same population
+# neff=True calculates reduced sample size to give 'effective degrees of freedom' to account for autocorrelation in data
+# equalvar=False permits different variances in X1 and X2 (Welch's test)
+def ttest(X1,X2,equalvar=True,neff=True):
+    # print('X1:',X1.shape,'X2:',X2.shape)
+    if neff: #calc integral time to correct DoF for auto-correlation
+        X1T0=calc_T0(X1)
+        X2T0=calc_T0(X2)
+        # print('X1T0:',X1T0.shape,'X2T0:',X2T0.shape)
+    else:
+        X1T0=None
+        X2T0=None
+    t=calc_tstat(X1,X2,X1T0=X1T0,X2T0=X2T0,equalvar=equalvar)
+    # print('t:',t.shape)
+    nDoF=calc_nDoF(X1,X2,X1T0=X1T0,X2T0=X2T0,equalvar=equalvar)
+    # print('nDoF:',nDoF.shape)
+    p=pval2sided(t,nDoF)
+    # print('p:',p.shape)
+    return p
+
 
 def calc_T0(x): #calc integral timescale, used for estimating effective DoF
     xs=x.shape
@@ -63,25 +83,6 @@ def calc_nDoF(X1,X2,X1T0=None,X2T0=None,equalvar=True):
 
 def tcdf(x,DoF):
     return ss.t.cdf(x,DoF)
-# def tpdf(x,DoF):
-#     return ss.t.pdf(x,DoF)
 
 def pval2sided(t,nDoF):
     return(2*(1-tcdf(np.abs(t),nDoF)))
-
-def ttest(X1,X2,equalvar=True,neff=True):
-    # print('X1:',X1.shape,'X2:',X2.shape)
-    if neff: #calc integral time to correct DoF for auto-correlation
-        X1T0=calc_T0(X1)
-        X2T0=calc_T0(X2)
-        # print('X1T0:',X1T0.shape,'X2T0:',X2T0.shape)
-    else:
-        X1T0=None
-        X2T0=None
-    t=calc_tstat(X1,X2,X1T0=X1T0,X2T0=X2T0,equalvar=equalvar)
-    # print('t:',t.shape)
-    nDoF=calc_nDoF(X1,X2,X1T0=X1T0,X2T0=X2T0,equalvar=equalvar)
-    # print('nDoF:',nDoF.shape)
-    p=pval2sided(t,nDoF)
-    # print('p:',p.shape)
-    return p
